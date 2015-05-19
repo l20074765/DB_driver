@@ -1,0 +1,6 @@
+object_script*
+Makefile*
+*.pro.user
+build/
+src/java_export/libs/
+src/java_export/obj/
