@@ -6,7 +6,7 @@
 ##--------------------------------------------------------------------------
 ## File Description
 ## ----------------
-##      db_serial.h 串口驱动接口头文件
+##      mdb_api.c MDB驱动协议接口c文件
 ##
 ##--------------------------------------------------------------------------
 ##
@@ -14,10 +14,18 @@
 ##			QQ	:	1760668483
 ##        Date	:	2015.05.20
 ##============================================================================*/
-#ifndef _DB_SERIAL_H_
-#define _DB_SERIAL_H_
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include "db_serial.h"
+#include "timer.h"
+#include "ev_config.h"
 
 
 
 
-#endif
+
+
+
+

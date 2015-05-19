@@ -66,7 +66,8 @@ HEADERS += \
     src/yserialport/yoc_serialport.h \
     src/general/ev_config.h \
     src/cpp_export/db_driver.h \
-    src/db_api/db_serial.h
+    src/db_api/db_serial.h \
+    src/db_api/mdb_api.h
 
 SOURCES += \
     src/ytimer/timer.c \
@@ -75,7 +76,8 @@ SOURCES += \
     src/yserialport/yoc_serialport.c \
     src/general/ev_config.c \
     src/cpp_export/db_driver.c \
-    src/db_api/db_serial.c
+    src/db_api/db_serial.c \
+    src/db_api/mdb_api.c
 
 
 

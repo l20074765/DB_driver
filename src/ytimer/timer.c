@@ -63,7 +63,6 @@ void *EV_timer_run(void *ptr)
 
 
 //注册定时器100ms的定时器  成功返回定时器ID号  失败返回 -1
-
 int EV_timer_register(EV_timerISR timer_isr)
 {
     int id;
