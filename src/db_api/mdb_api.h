@@ -14,8 +14,9 @@
 ##			QQ	:	1760668483
 ##        Date	:	2015.05.20
 ##============================================================================*/
-#ifndef _DB_SERIAL_H_
-#define _DB_SERIAL_H_
+#ifndef _MDB_API_H_
+#define _MDB_API_H_
+
 #include "db_driver.h"
 
 //DB --> PC
@@ -97,6 +98,101 @@
 #define     COIN_DISPENSER_MDB		2
 
 
+#define COIN_BIT_FAULT						0x01UL
+#define COIN_BIT_DISABLE					(0x01UL << 1)
+#define COIN_BIT_QUEBI						(0x01UL << 2)
+#define COIN_BIT_BUSY						(0x01UL << 3)
+#define COIN_BIT_RESET						(0x01UL << 4)
+#define COIN_BIT_OK							(0x01UL << 6)
+#define COIN_BIT_PAYBACK					(0x01UL << 7)
 
 
+#define COIN_ERR_COM					0x0001UL
+#define COIN_ERR_SENSOR					0x0002UL
+#define COIN_ERR_TUBEJAM				0x0004UL
+#define COIN_ERR_ROM					0x0008UL
+#define COIN_ERR_ROUTING				0x0010UL
+#define COIN_ERR_JAM					0x0020UL
+#define COIN_ERR_REMOVETUBE				0x0040UL
+//#define COIN_ERR_DISABLE				0x0100UL
+#define COIN_ERR_UNKNOW					0x8000UL
+
+
+#define BILL_BIT_FAULT						(0x01UL) 		  //¹ÊÕÏ
+#define BILL_BIT_DISABLE					(0x01UL << 1) //½ûÄÜÎ»
+#define BILL_BIT_QUEBI						(0x01UL << 2) //È±±ÒÎ»
+#define BILL_BIT_BUSY						(0x01UL << 3) //Ó²±ÒÆ÷Ã¦Î»
+#define BILL_BIT_RESET						(0x01UL << 4)
+#define BILL_BIT_PAYBACK					(0x01UL << 7) //ÍË±ÒÎ»
+
+
+
+
+#define BILL_ERR_COM					0x0001UL //Í¨ÐÅ¹ÊÕÏ
+#define BILL_ERR_SENSOR					0x0002UL //´«¸ÐÆ÷¹ÊÕÏ
+#define BILL_ERR_TUBEJAM				0x0004UL //³ö±Ò¿Ú¿¨±Ò
+#define BILL_ERR_ROM					0x0008UL //rom³ö´í
+#define BILL_ERR_ROUTING				0x0010UL //½ø±ÒÍ¨µÀ³ö´í
+#define BILL_ERR_JAM					0x0020UL //Í¶±Ò¿¨±Ò
+#define BILL_ERR_REMOVECASH				0x0040UL //ÒÆ³ýÖ½±Ò³®Ïä
+#define BILL_ERR_DISABLE				0x0080UL //½ûÄÜ
+#define BILL_ERR_MOTO					0x0100UL //Âí´ï¹ÊÕÏ
+#define BILL_ERR_CASH					0x0200UL //Ö½±Ò³®Ïä¹ÊÕÏ
+#define BILL_ERR_UNKNOW					0x8000UL //ÆäËû¸÷ÖÖ¹ÊÕÏ
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef struct _mdb_bill_con_{
+    int32 fd;           //串口 编号
+    int32 timeout;      //操作超时
+    int32 acceptor;     //收币器协议类型 2 MDB 0关闭
+    int32 dispenser;    //找零器协议类型 2 MDB 0关闭
+    int32 ch_r[16];
+    int32 ch_d[16];
+    int32 res;          // 0失败  1成功
+}MDB_BILL_CON;
+
+
+typedef struct _mdb_coin_con_{
+    int32 fd;           //串口 编号
+    int32 timeout;      //操作超时
+    int32 acceptor;     //收币器协议类型 2 MDB 0关闭
+    int32 dispenser;    //找零器协议类型 2 MDB 0关闭
+    int32 ch_r[16];
+    int32 ch_d[16];
+    int32 res;          // 0失败  1成功
+}MDB_COIN_CON;
+
+
+
+
+
+
+
+
+
+
+int32 MDB_heart_check(ST_MDB_HEART_REQ *req,ST_MDB_HEART_RPT *rpt);
+int32 MDB_coin_info_check(const ST_MDB_COIN_INFO_REQ *req,ST_MDB_COIN_INFO_RPT *rpt);
+int32 MDB_bill_info_check(const ST_MDB_BILL_INFO_REQ *req,ST_MDB_BILL_INFO_RPT *rpt);
+int32 MDB_init(ST_MDB_INIT_REQ *req,ST_MDB_INIT_RPT *rpt);
+int32 MDB_enable(ST_MDB_ENABLE_REQ *req,ST_MDB_ENABLE_RPT *rpt);
+int32 MDB_cost(const ST_MDB_COST_REQ *req,ST_MDB_COST_RPT *rpt);
+int32 MDB_payback(const ST_MDB_PAYBACK_REQ *req,ST_MDB_PAYBACK_RPT *rpt);
+int32 MDB_payout(const ST_MDB_PAYOUT_REQ *req,ST_MDB_PAYOUT_RPT *rpt);
 #endif

@@ -220,8 +220,9 @@ uint8 EV_timer_start(int timerId,uint32 sec)
 
 
 
-void EV_msleep(unsigned long msec)//毫秒睡眠
+void EV_msleep(int msec)//毫秒睡眠
 {
+
 #ifdef _WIN32
     Sleep(msec);
 #else

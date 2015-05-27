@@ -18,58 +18,25 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include "yoc_serialport.h"
 #include "db_serial.h"
+#include "yoc_serialport.h"
 #include "timer.h"
 #include "ev_config.h"
 
 
 
-//定义串口结构体数组 最大不超过50
-#define PORT_SUM    50
-
-static ST_PORT *portArr[PORT_SUM] = {NULL};
-static uint16  portCurId = 0;
-
-
-int EV_closeSerialPort(int portId)
+int32 DB_getCh(int32 fd,char *ch)
 {
-    if(portId >= 0 && portId < PORT_SUM){
-        EV_LOGI("[%s] Closed...\n",portArr[portId]->portName);
-        yserial_close(portArr[portId]->fd);
-        portArr[portId] = NULL;
-        return 1;
+    int i = 0;
+#ifdef EV_WIN32
+    i = yserial_read(fd,ch,1);
+#else
+    if(yserial_bytesAvailable(fd) > 0){
+        i = yserial_read(fd,ch,1);
     }
-    return -1;
-}
-
-
-int DB_openSerialPort(char *portName,int baud,int databits,char parity,int stopbits)
-{
-    ST_PORT *port;
-    uint16  i;
-    port = yserial_open(portName);
-    if (port == NULL){
-            EV_LOGE("[%s] Open failed...\n",portName);
-            return -1;
-    }
-    yserial_setParity(port->fd,parity);
-    yserial_setBaudRate(port->fd,baud);
-    yserial_setDataBits(port->fd,databits);
-    yserial_setStopBits(port->fd,stopbits);
-    yserial_setTimeout(port->fd,10);
-    yserial_clear(port->fd);
-
-    //插入数组
-    for(i = 0;i < PORT_SUM;i++){
-        if(portArr[i] == NULL){
-            portArr[i] = port;
-            EV_LOGI("[%s] Open suc...\n",portName);
-            return i;
-        }
-    }
-    yserial_close(port);
-    return -1;
+#endif
+    //EV_LOGD("DB_getCh:i=%d,ch=%d",i,*ch);
+    return i;
 }
 
 

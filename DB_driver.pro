@@ -67,7 +67,11 @@ HEADERS += \
     src/general/ev_config.h \
     src/cpp_export/db_driver.h \
     src/db_api/db_serial.h \
-    src/db_api/mdb_api.h
+    src/db_api/mdb_api.h \
+    src/general/json.h \
+    src/java_export/com_easivend_evprotocol_EVprotocol.h \
+    src/db_api/db_json.h \
+    src/db_api/bento_api.h
 
 SOURCES += \
     src/ytimer/timer.c \
@@ -77,7 +81,11 @@ SOURCES += \
     src/general/ev_config.c \
     src/cpp_export/db_driver.c \
     src/db_api/db_serial.c \
-    src/db_api/mdb_api.c
+    src/db_api/mdb_api.c \
+    src/general/json.c \
+    src/java_export/com_easivend_evprotocol_EVprotocol.c \
+    src/db_api/db_json.c \
+    src/db_api/bento_api.c
 
 
 

@@ -41,5 +41,5 @@ void EV_timer_release(int timerId);
 uint8 EV_timer_start(int timerId,uint32 sec);
 void EV_timer_stop(int timerId);
 uint8 EV_timer_isTimeout(int timerId);
-void EV_msleep(unsigned long msec);//毫秒睡眠
+void EV_msleep(int msec);//毫秒睡眠
 #endif

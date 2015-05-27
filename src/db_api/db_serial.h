@@ -16,8 +16,7 @@
 ##============================================================================*/
 #ifndef _DB_SERIAL_H_
 #define _DB_SERIAL_H_
+#include "db_driver.h"
 
-
-
-
+int32 DB_getCh(int32 fd,char *ch);
 #endif

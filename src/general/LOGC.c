@@ -20,7 +20,7 @@
 
 /* 日志文件名 */
 TLS char	g_log_pathfilename[ MAXLEN_FILENAME + 1 ] = "" ;
-TLS int		g_log_level = LOGLEVEL_INFO ;
+TLS int		g_log_level = LOGLEVEL_DEBUG;//LOGLEVEL_INFO ;
 
 const char log_level_itoa[][6] = { "DEBUG" , "INFO" , "WARN" , "ERROR" , "FATAL" } ;
 

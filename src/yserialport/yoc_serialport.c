@@ -1,45 +1,101 @@
 #include "yoc_serialport.h"
+//#include "ev_config.h"
 
-
-void yserial_close(ST_PORT *port)
-{
+typedef struct _st_port{
 #if ( defined EV_WIN32 )
-    winserial_close(port->fd);
-#else  //linux待完善
-    unixserial_close(port->fd);
+    HANDLE  fd;
+#else
+    int     fd;
 #endif
-    free(port->portName);
-    free(port);
-    port->portName = NULL;
-    port = NULL;
+    int     id;   //提供给上层的串口ID号
+    char    *portName; //串口号名称
+}ST_PORT;
+
+
+#define MAX_PORT    100
+static ST_PORT *port_arr[MAX_PORT] = {NULL};
+
+
+ST_PORT *yserialPort(int32 fd){
+    if(fd >= 0 && fd < MAX_PORT){
+        return port_arr[fd];
+    }
+    else{
+        return NULL;
+    }
+
 }
 
 
-ST_PORT *yserial_open(char *portName)
+char *yserial_getPortName(int32 fd)
 {
-    int32 len;
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){return NULL;}
+    return port->portName;
+}
+
+ST_PORT *yserialCreate(char *portName){
     ST_PORT *port;
+    int i,len;
+    //分配内存
     port = malloc(sizeof(ST_PORT));
     if(port == NULL){
         return NULL;
     }
 
     len = strlen(portName);
-    port->portName = malloc(len);
+    port->portName = malloc(len + 1); //分配内存多分配一个字节用于存储结束符
     if(port->portName == NULL){
         free(port);
         port = NULL;
         return NULL;
     }
+    memset(port->portName,0,len + 1);
     strncpy(port->portName,portName,len);
+    for(i = 0;i < MAX_PORT;i++){
+        if(port_arr[i] == NULL){
+            port->id = i;
+            port_arr[i] = port;
+            return port;
+        }
+    }
+
+    free(port->portName);
+    free(port);
+    return NULL;
+}
+
+void yserial_close(int32 fd)
+{
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return;
+    }
+#if ( defined EV_WIN32 )
+    winserial_close(port->fd);
+#else  //linux待完善
+    unixserial_close(port->fd);
+#endif
+    //释放资源
+    port_arr[port->id] = NULL;
+    free(port->portName);
+    free(port);
+}
 
 
+int32 yserial_open(char *portName)
+{
+    ST_PORT *port;
+    port = yserialCreate(portName);
+    if(port == NULL) return -1;
 #if ( defined EV_WIN32 )
     port->fd  = winserial_open(portName);
     if(port->fd == NULL){
+        port_arr[port->id] = NULL;
         free(port->portName);
         free(port);
-        return NULL;
+
+        return -1;
     }
     winserial_setRWBuffer(port->fd,1024,1024);
     winserial_setBaudRate(port->fd,BAUD9600);
@@ -48,14 +104,13 @@ ST_PORT *yserial_open(char *portName)
     winserial_setParity(port->fd,PAR_NONE);
     winserial_setFlowControl(port->fd,FLOW_OFF);
     winserial_setTimeout(port->fd,10);
-
-    return port;
 #else
     port->fd = unixserial_open(portName);
     if(port->fd == -1){
+        port_arr[port->id] = NULL;
         free(port->portName);
         free(port);
-        return NULL;
+        return -1;
     }
     unixserial_setBaudRate(port->fd,BAUD9600);
     unixserial_setDataBits(port->fd,DATA_8);
@@ -63,14 +118,19 @@ ST_PORT *yserial_open(char *portName)
     unixserial_setParity(port->fd,PAR_NONE);
     unixserial_setFlowControl(port->fd,FLOW_OFF);
     unixserial_setTimeout(port->fd,10);
-    return port;
+    //EV_LOGD("yserial_open:fd=%d",port->fd);
 #endif
+    return port->id;
 }
 
 
 
-uint32 yserial_read (const ST_PORT *port,char *pData,uint32 len)
+uint32 yserial_read (int fd,char *pData,uint32 len)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return 0;
+    }
 #if ( defined EV_WIN32 )
     return winserial_read(port->fd,pData,len);
 #else
@@ -79,8 +139,12 @@ uint32 yserial_read (const ST_PORT *port,char *pData,uint32 len)
 }
 
 
-uint32 yserial_write (const ST_PORT *port,const char* pData, uint32 len)
+uint32 yserial_write (int fd,const char* pData, uint32 len)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return 0;
+    }
 #if ( defined EV_WIN32 )
     return winserial_write(port->fd,pData,len);
 #else
@@ -89,8 +153,12 @@ uint32 yserial_write (const ST_PORT *port,const char* pData, uint32 len)
 }
 
 
-int yserial_setRWBuffer(const ST_PORT *port,uint32 dwInQueue,uint32 dwOutQueue)
+int yserial_setRWBuffer(int fd,uint32 dwInQueue,uint32 dwOutQueue)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return 0;
+    }
 #if ( defined EV_WIN32 )
     return winserial_setRWBuffer(port->fd,(DWORD)dwInQueue,(DWORD)dwOutQueue);
 #else
@@ -100,18 +168,30 @@ int yserial_setRWBuffer(const ST_PORT *port,uint32 dwInQueue,uint32 dwOutQueue)
 
 
 
-uint32 yserial_bytesAvailable(const ST_PORT *port)
+uint32 yserial_bytesAvailable(int fd)
 {
+    ST_PORT *port = yserialPort(fd);
+    uint32 i = 0;
+    if(port == NULL){
+        return 0;
+    }
 #if ( defined EV_WIN32 )
     return winserial_bytesAvailable(port->fd);
 #else
-    return unixserial_bytesAvailable(port->fd);
+    //EV_LOGD("yserial_bytesAvailable:fd=%d,i=%d",port->fd,i);
+    i = unixserial_bytesAvailable(port->fd);
+    //EV_LOGD("yserial_bytesAvailable1:fd=%d,i=%d",port->fd,i);
+    return i;
 #endif
 }
 
 
-void yserial_setBaudRate(const ST_PORT *port, BaudRateType baudRate)
+void yserial_setBaudRate(int fd, BaudRateType baudRate)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return;
+    }
 #if ( defined EV_WIN32 )
     winserial_setBaudRate(port->fd,baudRate);
 #else
@@ -121,8 +201,12 @@ void yserial_setBaudRate(const ST_PORT *port, BaudRateType baudRate)
 
 
 
-void yserial_setDataBits(const ST_PORT *port, DataBitsType dataBits)
+void yserial_setDataBits(int fd, DataBitsType dataBits)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return ;
+    }
 #if ( defined EV_WIN32 )
     winserial_setDataBits(port->fd,dataBits);
 #else
@@ -131,8 +215,12 @@ void yserial_setDataBits(const ST_PORT *port, DataBitsType dataBits)
 }
 
 
-void yserial_setStopBits(const ST_PORT *port,StopBitsType stopBits)
+void yserial_setStopBits(int fd,StopBitsType stopBits)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return;
+    }
 #if ( defined EV_WIN32 )
     winserial_setStopBits(port->fd,stopBits);
 #else
@@ -142,8 +230,12 @@ void yserial_setStopBits(const ST_PORT *port,StopBitsType stopBits)
 
 
 
-void yserial_setParity(const ST_PORT *port,ParityType parity)
+void yserial_setParity(int fd,ParityType parity)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return;
+    }
 #if ( defined EV_WIN32 )
     winserial_setParity(port->fd,parity);
 #else
@@ -153,8 +245,12 @@ void yserial_setParity(const ST_PORT *port,ParityType parity)
 
 
 
-void yserial_setFlowControl(const ST_PORT *port,FlowType flow)
+void yserial_setFlowControl(int fd,FlowType flow)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return ;
+    }
 #if ( defined EV_WIN32 )
     winserial_setFlowControl(port->fd,flow);
 #else
@@ -164,8 +260,12 @@ void yserial_setFlowControl(const ST_PORT *port,FlowType flow)
 
 
 
-void yserial_setTimeout(const ST_PORT *port,long millisec)
+void yserial_setTimeout(int fd,long millisec)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return ;
+    }
 #if ( defined EV_WIN32 )
     winserial_setTimeout(port->fd,millisec);
 #else
@@ -179,8 +279,12 @@ void yserial_setTimeout(const ST_PORT *port,long millisec)
 
 
 
-void yserial_clear(const ST_PORT *port)
+void yserial_clear(int fd)
 {
+    ST_PORT *port = yserialPort(fd);
+    if(port == NULL){
+        return ;
+    }
 #if ( defined EV_WIN32 )
     winserial_clear(port->fd);
 #else
