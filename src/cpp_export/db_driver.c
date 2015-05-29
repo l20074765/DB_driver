@@ -18,6 +18,7 @@
 #include "yoc_serialport.h"
 #include "ev_config.h"
 #include "mdb_api.h"
+#include "bento_api.h"
 
 int32   EV_API  EV_portRegister(int8 *portName)
 {

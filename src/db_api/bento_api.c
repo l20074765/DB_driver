@@ -183,6 +183,11 @@ int32 BT_open(const ST_BT_OPEN_REQ *req,ST_BT_OPEN_RPT *rpt)
         return 0;
     }
 
+    if(req->addr <= 0){
+        EV_LOGE("BT_open:req->addr = %d",req->addr);
+        return 0;
+    }
+
     if(req->no <= 0){
         EV_LOGE("BT_open:req->no = %d",req->no);
         return 0;
@@ -194,7 +199,7 @@ int32 BT_open(const ST_BT_OPEN_REQ *req,ST_BT_OPEN_RPT *rpt)
     rpt->no = req->no;
     sendmsg.port = rpt->fd;
     sendmsg.cmd = BT_OPEN;
-    sendmsg.addr = rpt->addr;
+    sendmsg.addr = rpt->addr - 1;
     sendmsg.arg = rpt->no;
     ret = BT_sendMsg(&sendmsg,&recvmsg);
     if(ret == 1){
@@ -252,12 +257,18 @@ int32  BT_check(const ST_BT_CHECK_REQ *req,ST_BT_CHECK_RPT *rpt)
         return 0;
     }
 
+
+    if(req->addr <= 0){
+        EV_LOGE("BT_check:req->addr = %d",req->addr);
+        return 0;
+    }
+
     rpt->addr = req->addr;
     rpt->fd = req->fd;
 
     sendmsg.port = rpt->fd;
     sendmsg.cmd =  BT_CHECK;
-    sendmsg.addr = rpt->addr;
+    sendmsg.addr = rpt->addr - 1;
     sendmsg.arg = 0;
     ret = BT_sendMsg(&sendmsg,&recvmsg);
     if(ret == 1){

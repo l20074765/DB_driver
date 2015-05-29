@@ -3,6 +3,7 @@
 #include "db_driver.h"
 #include "db_serial.h"
 #include "db_json.h"
+#include "yoc_serialport.h"
 #include<stdio.h>
 #include<stdlib.h>
 #include<unistd.h>
@@ -64,8 +65,9 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVPortRegister
     portName = (char *)(*env)->GetStringUTFChars(env,jportName, NULL);
     fd = EV_portRegister((char *)portName);
     (*env)->ReleaseStringUTFChars(env,jportName,portName);
-
+    portName = yserial_getPortName(fd);
     entry = Json_create_title(EV_REGISTER);
+    Json_insert_str(entry,"port",portName);
     Json_insert_int(entry,"port_id",fd);
     root = Json_insert_head(entry);
     if(root != NULL){
