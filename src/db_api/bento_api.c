@@ -225,12 +225,17 @@ int32 BT_light(const ST_BT_LIGHT_REQ *req,ST_BT_LIGHT_RPT *rpt)
         return 0;
     }
 
+    if(req->addr <= 0){
+        EV_LOGE("BT_light:req->addr = %d",req->addr);
+        return 0;
+    }
+
     rpt->addr = req->addr;
     rpt->fd = req->fd;
     rpt->opt = req->opt;
     sendmsg.port = rpt->fd;
     sendmsg.cmd =  BT_LIGHT;
-    sendmsg.addr = rpt->addr;
+    sendmsg.addr = rpt->addr - 1;
     sendmsg.arg = rpt->opt;
     ret = BT_sendMsg(&sendmsg,&recvmsg);
     if(ret == 1){
