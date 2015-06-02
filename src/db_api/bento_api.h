@@ -24,4 +24,6 @@
 int32 BT_open(const ST_BT_OPEN_REQ *req,ST_BT_OPEN_RPT *rpt);
 int32  BT_check(const ST_BT_CHECK_REQ *req,ST_BT_CHECK_RPT *rpt);
 int32 BT_light(const ST_BT_LIGHT_REQ *req,ST_BT_LIGHT_RPT *rpt);
+int32 BT_hot(const ST_BT_HOT_REQ *req,ST_BT_HOT_RPT *rpt);
+int32 BT_cool(const ST_BT_COOL_REQ *req,ST_BT_COOL_RPT *rpt);
 #endif // BENTO_API_H

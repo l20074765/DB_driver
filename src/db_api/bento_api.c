@@ -251,6 +251,73 @@ int32 BT_light(const ST_BT_LIGHT_REQ *req,ST_BT_LIGHT_RPT *rpt)
 
 
 
+int32 BT_cool(const ST_BT_COOL_REQ *req,ST_BT_COOL_RPT *rpt)
+{
+    int ret = 0;
+    if(req == NULL || rpt == NULL){
+        EV_LOGE("BT_cool:s=%x,r=%x",(unsigned int)req,(unsigned int)rpt);
+        return 0;
+    }
+
+    if(req->addr <= 0){
+        EV_LOGE("BT_cool:req->addr = %d",req->addr);
+        return 0;
+    }
+
+    rpt->addr = req->addr;
+    rpt->fd = req->fd;
+    rpt->opt = req->opt;
+    sendmsg.port = rpt->fd;
+    sendmsg.cmd =  BT_COOL;
+    sendmsg.addr = rpt->addr - 1;
+    sendmsg.arg = rpt->opt;
+    ret = BT_sendMsg(&sendmsg,&recvmsg);
+    if(ret == 1){
+        rpt->res = 1;
+        return 1;
+    }
+    else{
+        rpt->res = 0;
+        return 0;
+    }
+
+}
+
+
+
+int32 BT_hot(const ST_BT_HOT_REQ *req,ST_BT_HOT_RPT *rpt)
+{
+    int ret = 0;
+    if(req == NULL || rpt == NULL){
+        EV_LOGE("BT_hot:s=%x,r=%x",(unsigned int)req,(unsigned int)rpt);
+        return 0;
+    }
+
+    if(req->addr <= 0){
+        EV_LOGE("BT_hot:req->addr = %d",req->addr);
+        return 0;
+    }
+
+    rpt->addr = req->addr;
+    rpt->fd = req->fd;
+    rpt->opt = req->opt;
+    sendmsg.port = rpt->fd;
+    sendmsg.cmd =  BT_HOT;
+    sendmsg.addr = rpt->addr - 1;
+    sendmsg.arg = rpt->opt;
+    ret = BT_sendMsg(&sendmsg,&recvmsg);
+    if(ret == 1){
+        rpt->res = 1;
+        return 1;
+    }
+    else{
+        rpt->res = 0;
+        return 0;
+    }
+
+}
+
+
 
 int32  BT_check(const ST_BT_CHECK_REQ *req,ST_BT_CHECK_RPT *rpt)
 {

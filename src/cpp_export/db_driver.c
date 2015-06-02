@@ -191,6 +191,44 @@ int32  EV_API  EV_mdbPayout(ST_MDB_PAYOUT_REQ *req,ST_MDB_PAYOUT_RPT *rpt)
 
 
 
+
+/*********************************************************************************************************
+** Function name	:		EV_mdbBillConfig
+** Descriptions		:		MDB设备纸币器配置接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
+*********************************************************************************************************/
+int32  EV_API  EV_mdbBillConfig(ST_MDB_BILL_CON_REQ *req,ST_MDB_BILL_CON_RPT *rpt)
+{
+    int32 res;
+    EV_LOGD("EV_mdbBillConfig:req=%x\n",(unsigned int)req);
+    res = MDB_bill_config(req,rpt);
+    EV_LOGD("EV_mdbBillConfig:res=%d",res);
+    return res;
+}
+
+
+/*********************************************************************************************************
+** Function name	:		EV_mdbCoinConfig
+** Descriptions		:		MDB设备硬币器配置接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
+*********************************************************************************************************/
+int32  EV_API  EV_mdbCoinConfig(ST_MDB_COIN_CON_REQ *req,ST_MDB_COIN_CON_RPT *rpt)
+{
+    int32 res;
+    EV_LOGD("EV_mdbCoinConfig:req=%x\n",(unsigned int)req);
+    res = MDB_coin_config(req,rpt);
+    EV_LOGD("EV_mdbCoinConfig:res=%d",res);
+    return res;
+}
+
+
+
+
+
 /*********************************************************************************************************
 ** Function name	:		EV_bentoOpen
 ** Descriptions		:		BENTO快递柜开门接口
@@ -244,5 +282,39 @@ int32  EV_API  EV_bentoLight(ST_BT_LIGHT_REQ *req,ST_BT_LIGHT_RPT *rpt)
     return res;
 }
 
+
+/*********************************************************************************************************
+** Function name	:		EV_bentoCool
+** Descriptions		:		BENTO快递柜制冷控制接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
+*********************************************************************************************************/
+int32  EV_API  EV_bentoCool(ST_BT_COOL_REQ *req,ST_BT_COOL_RPT *rpt)
+{
+    int32 res;
+    EV_LOGD("EV_bentoCool:req=%x\n",(unsigned int)req);
+    res = BT_cool(req,rpt);
+    EV_LOGD("EV_bentoCool:res=%d",res);
+    return res;
+}
+
+
+
+/*********************************************************************************************************
+** Function name	:		EV_bentoHot
+** Descriptions		:		BENTO快递柜加热控制接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
+*********************************************************************************************************/
+int32  EV_API  EV_bentoHot(ST_BT_HOT_REQ *req,ST_BT_HOT_RPT *rpt)
+{
+    int32 res;
+    EV_LOGD("EV_bentoHot:req=%x\n",(unsigned int)req);
+    res = BT_hot(req,rpt);
+    EV_LOGD("EV_bentoHot:res=%d",res);
+    return res;
+}
 
 

@@ -144,49 +144,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct _mdb_bill_con_{
-    int32 fd;           //串口 编号
-    int32 timeout;      //操作超时
-    int32 acceptor;     //收币器协议类型 2 MDB 0关闭
-    int32 dispenser;    //找零器协议类型 2 MDB 0关闭
-    int32 ch_r[16];
-    int32 ch_d[16];
-    int32 res;          // 0失败  1成功
-}MDB_BILL_CON;
-
-
-typedef struct _mdb_coin_con_{
-    int32 fd;           //串口 编号
-    int32 timeout;      //操作超时
-    int32 acceptor;     //收币器协议类型 2 MDB 0关闭
-    int32 dispenser;    //找零器协议类型 2 MDB 0关闭
-    int32 ch_r[16];
-    int32 ch_d[16];
-    int32 res;          // 0失败  1成功
-}MDB_COIN_CON;
-
-
-
-
-
-
-
-
-
-
 int32 MDB_heart_check(ST_MDB_HEART_REQ *req,ST_MDB_HEART_RPT *rpt);
 int32 MDB_coin_info_check(const ST_MDB_COIN_INFO_REQ *req,ST_MDB_COIN_INFO_RPT *rpt);
 int32 MDB_bill_info_check(const ST_MDB_BILL_INFO_REQ *req,ST_MDB_BILL_INFO_RPT *rpt);
@@ -195,4 +152,7 @@ int32 MDB_enable(ST_MDB_ENABLE_REQ *req,ST_MDB_ENABLE_RPT *rpt);
 int32 MDB_cost(const ST_MDB_COST_REQ *req,ST_MDB_COST_RPT *rpt);
 int32 MDB_payback(const ST_MDB_PAYBACK_REQ *req,ST_MDB_PAYBACK_RPT *rpt);
 int32 MDB_payout(const ST_MDB_PAYOUT_REQ *req,ST_MDB_PAYOUT_RPT *rpt);
+int32 MDB_bill_config(const ST_MDB_BILL_CON_REQ *req,ST_MDB_BILL_CON_RPT *rpt);
+int32 MDB_coin_config(const ST_MDB_COIN_CON_REQ *req,ST_MDB_COIN_CON_RPT *rpt);
+
 #endif

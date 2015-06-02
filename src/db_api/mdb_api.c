@@ -294,6 +294,7 @@ int32 MDB_enable(ST_MDB_ENABLE_REQ *req,ST_MDB_ENABLE_RPT *rpt)
     rpt->fd = req->fd;
     rpt->bill = req->bill;
     rpt->coin = req->coin;
+    rpt->opt = req->opt;
 
     obj = 0;
     if(req->bill == 1){obj |= OBJ_BILL;}
@@ -561,40 +562,59 @@ int32 MDB_cost(const ST_MDB_COST_REQ *req,ST_MDB_COST_RPT *rpt)
 }
 
 
-
 /*********************************************************************************************************
-** Function name:     	MDB_bill_config
-** Descriptions:	    纸币器配置
-** input parameters:    fd 串口编号 cost扣款金额 timeout 超时时间
-** output parameters:   无
-** Returned value:      0失败 1成功
+** Function name	:		MDB_bill_config
+** Descriptions		:		MDB设备纸币器配置接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
 *********************************************************************************************************/
-int32 MDB_bill_config(MDB_BILL_CON *con)
+int32 MDB_bill_config(const ST_MDB_BILL_CON_REQ *req,ST_MDB_BILL_CON_RPT *rpt)
 {
     uint8 in = MT + 1,res,i;
     uint8 type;
     uint8 *buf;
-    if(con == NULL){return 0;}
-    type = (uint8)(con->acceptor & 0x0F);
-    type |= ((uint8)(con->dispenser & 0x0F) << 4);
-    send_msg.port = con->fd;
+    if(req == NULL || req == NULL){
+        EV_LOGE("MDB_bill_config:s=%x,r=%x",(unsigned int)req,(unsigned int)rpt);
+        return 0;
+    }
+
+    memset(rpt,0,sizeof(ST_MDB_COST_RPT));
+    rpt->fd = req->fd;
+    rpt->acceptor = req->acceptor;
+    rpt->dispenser = req->dispenser;
+    for(i = 0;i < 16;i++){
+        rpt->ch_d[i] = req->ch_d[i];
+        rpt->ch_r[i] = req->ch_r[i];
+    }
+
+
+    type = (uint8)(rpt->acceptor & 0x0F);
+    type |= ((uint8)(rpt->dispenser & 0x0F) << 4);
+    send_msg.port = rpt->fd;
     send_msg.type = DB_MT_ACTION_REQ;
     send_msg.data[in++] = MDB_BILL_CON_REQ;
     send_msg.data[in++] = type;
     for(i = 0;i < 16;i++){
-        send_msg.data[in++] = MDB_pcEncodAmount(con->ch_r[i]);
+        send_msg.data[in++] = MDB_pcEncodAmount(rpt->ch_r[i]);
     }
     for(i = 0;i < 16;i++){
-        send_msg.data[in++] = MDB_pcEncodAmount(con->ch_d[i]);
+        send_msg.data[in++] = MDB_pcEncodAmount(rpt->ch_d[i]);
     }
 
     send_msg.len = in;
     MDB_package(&send_msg);
-    res = MDB_sendMsg(&send_msg,&recv_msg,con->timeout);
-    if(res != 1){return 0;}
+    res = MDB_sendMsg(&send_msg,&recv_msg,5000);
+
+    if(res != 1){
+        EV_LOGE("MDB_bill_config:Timeout...");
+        return 0;
+    }
+
     buf = recv_msg.data;
     if(buf[MT] == DB_MT_ACTION_RPT && buf[MT + 1] == MDB_BILL_CON_RPT){
-        con->res = buf[MT + 2];
+        rpt->com_ok = 1;
+        rpt->res = buf[MT + 2];
         return 1;
 
     }
@@ -605,38 +625,59 @@ int32 MDB_bill_config(MDB_BILL_CON *con)
 }
 
 /*********************************************************************************************************
-** Function name:     	MDB_coin_config
-** Descriptions:	    硬币器配置
-** input parameters:    con
-** output parameters:   无
-** Returned value:      0失败 1成功
+** Function name	:		EV_mdbCoinConfig
+** Descriptions		:		MDB设备硬币器配置接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
 *********************************************************************************************************/
-int32 MDB_coin_config(MDB_COIN_CON *con)
+int32 MDB_coin_config(const ST_MDB_COIN_CON_REQ *req,ST_MDB_COIN_CON_RPT *rpt)
 {
     uint8 in = MT + 1,res,i;
     uint8 type;
     uint8 *buf;
-    if(con == NULL){return 0;}
-    type = (uint8)(con->acceptor & 0x0F);
-    type |= ((uint8)(con->dispenser & 0x0F) << 4);
-    send_msg.port = con->fd;
+
+    if(req == NULL || req == NULL){
+        EV_LOGE("MDB_coin_config:s=%x,r=%x",(unsigned int)req,(unsigned int)rpt);
+        return 0;
+    }
+
+    memset(rpt,0,sizeof(ST_MDB_COST_RPT));
+    rpt->fd = req->fd;
+    rpt->acceptor = req->acceptor;
+    rpt->dispenser = req->dispenser;
+    rpt->high_enable = req->high_enable;
+    for(i = 0;i < 16;i++){
+        rpt->ch_d[i] = req->ch_d[i];
+        rpt->ch_r[i] = req->ch_r[i];
+    }
+
+    type = (uint8)(rpt->acceptor & 0x0F);
+    type |= ((uint8)(rpt->dispenser & 0x0F) << 4);
+    send_msg.port = rpt->fd;
     send_msg.type = DB_MT_ACTION_REQ;
     send_msg.data[in++] = MDB_COIN_CON_REQ;
     send_msg.data[in++] = type;
+    send_msg.data[in++] = rpt->high_enable;
     for(i = 0;i < 16;i++){
-        send_msg.data[in++] = MDB_pcEncodAmount(con->ch_r[i]);
+        send_msg.data[in++] = MDB_pcEncodAmount(rpt->ch_r[i]);
     }
     for(i = 0;i < 16;i++){
-        send_msg.data[in++] = MDB_pcEncodAmount(con->ch_d[i]);
+        send_msg.data[in++] = MDB_pcEncodAmount(rpt->ch_d[i]);
     }
 
     send_msg.len = in;
     MDB_package(&send_msg);
-    res = MDB_sendMsg(&send_msg,&recv_msg,con->timeout);
-    if(res != 1){return 0;}
+    res = MDB_sendMsg(&send_msg,&recv_msg,5000);
+    if(res != 1){
+        EV_LOGE("MDB_coin_config:Timeout...");
+        return 0;
+    }
+
     buf = recv_msg.data;
     if(buf[MT] == DB_MT_ACTION_RPT && buf[MT + 1] == MDB_COIN_CON_RPT){
-        con->res = buf[MT + 2];
+        rpt->com_ok = 1;
+        rpt->res = buf[MT + 2];
         return 1;
 
     }
