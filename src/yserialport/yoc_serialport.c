@@ -1,5 +1,5 @@
 #include "yoc_serialport.h"
-//#include "ev_config.h"
+#include "ev_config.h"
 
 typedef struct _st_port{
 #if ( defined EV_WIN32 )
@@ -17,6 +17,7 @@ static ST_PORT *port_arr[MAX_PORT] = {NULL};
 
 
 ST_PORT *yserialPort(int32 fd){
+   // EV_LOGD("yserialPort:fd = %d\n",fd);
     if(fd >= 0 && fd < MAX_PORT){
         return port_arr[fd];
     }
@@ -35,7 +36,7 @@ char *yserial_getPortName(int32 fd)
 }
 
 ST_PORT *yserialCreate(char *portName){
-    ST_PORT *port;
+    ST_PORT *port = NULL;
     int i,len;
     //分配内存
     port = malloc(sizeof(ST_PORT));
@@ -87,7 +88,10 @@ int32 yserial_open(char *portName)
 {
     ST_PORT *port;
     port = yserialCreate(portName);
-    if(port == NULL) return -1;
+    if(port == NULL){
+        EV_LOGE("yserial_open:port = NULL\n");
+        return -1;
+    }
 #if ( defined EV_WIN32 )
     port->fd  = winserial_open(portName);
     if(port->fd == NULL){
@@ -110,6 +114,7 @@ int32 yserial_open(char *portName)
         port_arr[port->id] = NULL;
         free(port->portName);
         free(port);
+
         return -1;
     }
     unixserial_setBaudRate(port->fd,BAUD9600);
@@ -118,7 +123,7 @@ int32 yserial_open(char *portName)
     unixserial_setParity(port->fd,PAR_NONE);
     unixserial_setFlowControl(port->fd,FLOW_OFF);
     unixserial_setTimeout(port->fd,10);
-    //EV_LOGD("yserial_open:fd=%d",port->fd);
+    EV_LOGD("yserial_open:fd=%d id=%d",port->fd,port->id);
 #endif
     return port->id;
 }
