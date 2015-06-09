@@ -2,6 +2,7 @@
 #include "ev_config.h"
 #include "db_serial.h"
 #include "timer.h"
+#include "yoc_serialport.h"
 
 typedef struct _st_mdb_msg_{
     uint8 data[128];    //数据段

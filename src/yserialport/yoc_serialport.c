@@ -176,7 +176,6 @@ int yserial_setRWBuffer(int fd,uint32 dwInQueue,uint32 dwOutQueue)
 uint32 yserial_bytesAvailable(int fd)
 {
     ST_PORT *port = yserialPort(fd);
-    uint32 i = 0;
     if(port == NULL){
         return 0;
     }
@@ -184,9 +183,9 @@ uint32 yserial_bytesAvailable(int fd)
     return winserial_bytesAvailable(port->fd);
 #else
     //EV_LOGD("yserial_bytesAvailable:fd=%d,i=%d",port->fd,i);
-    i = unixserial_bytesAvailable(port->fd);
+    return unixserial_bytesAvailable(port->fd);
     //EV_LOGD("yserial_bytesAvailable1:fd=%d,i=%d",port->fd,i);
-    return i;
+   // return i;
 #endif
 }
 

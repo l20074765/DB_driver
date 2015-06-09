@@ -1,16 +1,14 @@
 #include "db_json.h"
-#include "json.h"
+#include "cJSON.h"
 
 
 
-json_t *Json_create_title(int type)
+void Json_create_title(int type)
 {
-    json_t *entry;
-    entry = json_new_object();
-    Json_insert_int(entry,JSON_TYPE,type);
-    return entry;
-}
+    type = type;
 
+}
+#if 0
 json_t * Json_insert_head(json_t *entry)
 {
     json_t *root = NULL;
@@ -51,3 +49,5 @@ void Json_insert_int(json_t *json,char *label,long value)
     json_insert_child(j_label,j_value);
     json_insert_child(json,j_label);
 }
+
+#endif

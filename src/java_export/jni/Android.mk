@@ -42,7 +42,7 @@ LOCAL_SRC_FILES += $(TOP_DIR)/db_api/mdb_api.c
 LOCAL_SRC_FILES += $(TOP_DIR)/db_api/bento_api.c
 LOCAL_SRC_FILES += $(TOP_DIR)/db_api/db_serial.c
 LOCAL_SRC_FILES += $(TOP_DIR)/db_api/db_json.c
-LOCAL_SRC_FILES += $(TOP_DIR)/general/json.c
+LOCAL_SRC_FILES += $(TOP_DIR)/general/cJSON.c
 LOCAL_SRC_FILES += $(TOP_DIR)/general/LOGC.c
 
 LOCAL_MODULE_FILENAME := libEVdirver

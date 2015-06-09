@@ -59,27 +59,30 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVPortRegister
     char *portName;
     int fd;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
     portName = (char *)(*env)->GetStringUTFChars(env,jportName, NULL);
     fd = EV_portRegister((char *)portName);
     (*env)->ReleaseStringUTFChars(env,jportName,portName);
     portName = yserial_getPortName(fd);
-    entry = Json_create_title(EV_REGISTER);
-    Json_insert_str(entry,"port",portName);
-    Json_insert_int(entry,"port_id",fd);
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD,entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_REGISTER);
+    cJSON_AddStringToObject(entry,"port",portName);
+    cJSON_AddNumberToObject(entry,"port_id",fd);
+
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
     }
-
 
     return msg;
 }
@@ -95,20 +98,23 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVPortRelease
   (JNIEnv *env, jclass cls, jint j_fd)
 {
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
     int fd = j_fd;
 
     EV_portRelease(fd);
+root=cJSON_CreateObject();
+entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_RELEASE);
 
-    entry = Json_create_title(EV_RELEASE);
-    Json_insert_int(entry,"result",1);
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    cJSON_AddNumberToObject(entry,"result",1);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -126,8 +132,8 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVBentoOpen
   (JNIEnv *env, jclass cls, jint fd, jint addr, jint box)
 {
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
     int res;
     ST_BT_OPEN_REQ req;
     ST_BT_OPEN_RPT rpt;
@@ -137,26 +143,33 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVBentoOpen
     req.no = box;
     res = EV_bentoOpen(&req,&rpt);
 
-    entry = Json_create_title(EV_BENTO_OPEN);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"addr",rpt.addr);
-    Json_insert_int(entry,"box",rpt.no);
+
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry );
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_BENTO_OPEN);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"addr",rpt.addr);
+    cJSON_AddNumberToObject(entry,"box",rpt.no);
+
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",1);
-        Json_insert_int(entry,"result",rpt.result);
+        cJSON_AddNumberToObject(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"result",rpt.result);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
-        Json_insert_int(entry,"result",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -179,51 +192,48 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVBentoCheck
     ST_BT_CHECK_RPT rpt;
     char ID[64] = {0};
     int res,i;
-    json_t *root,*entry,*label,*arr;
-    char *text;
+    cJSON *root,*entry,*col,*arr;
+    char *text = NULL;
     jstring msg;
     req.fd = fd;
     req.addr = addr;
     res = EV_bentoCheck(&req,&rpt);
 
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry );
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_BENTO_CHECK);
 
-    entry = Json_create_title(EV_BENTO_CHECK);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"addr",rpt.addr);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"addr",rpt.addr);
     if(res == 1){
-        Json_insert_int(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"is_success",1);
         for(i = 0;i < rpt.id_len ;i++){
             sprintf(&ID[i*2],"%02x",rpt.id[i]);
         }
-        Json_insert_str(entry,"ID",ID);
-        Json_insert_int(entry,"cool",rpt.iscool);
-        Json_insert_int(entry,"hot",rpt.ishot);
-        Json_insert_int(entry,"light",rpt.islight);
-        Json_insert_int(entry,"sum",rpt.sum);
+        cJSON_AddStringToObject(entry,"ID",ID);
+        cJSON_AddNumberToObject(entry,"cool",rpt.iscool);
+        cJSON_AddNumberToObject(entry,"hot",rpt.ishot);
+        cJSON_AddNumberToObject(entry,"light",rpt.islight);
+        cJSON_AddNumberToObject(entry,"sum",rpt.sum);
 
-        arr = json_new_array();
+        cJSON_AddItemToObject(entry,"column",arr = cJSON_CreateArray());
         for(i = 0;i < rpt.sum;i++){  //遍历货道
-            label = json_new_object();
-            Json_insert_int(label,"no",i + 1);
-            Json_insert_int(label,"state",1);
-            json_insert_child(arr,label);
+            cJSON_AddItemToArray(arr,col = cJSON_CreateObject());
+            cJSON_AddNumberToObject(col,"no",i + 1);
+            cJSON_AddNumberToObject(col,"state",1);
         }
-        label = json_new_string("column");
-        json_insert_child(label,arr);
-        json_insert_child(entry,label);
-
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -247,35 +257,37 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVBentoLight
     ST_BT_LIGHT_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
     req.fd = fd;
     req.addr =addr;
     req.opt = opt;
 
     res = EV_bentoLight(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_BENTO_LIGHT);
 
-    entry = Json_create_title(EV_BENTO_LIGHT);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"addr",rpt.addr);
-    Json_insert_int(entry,"opt",rpt.opt);
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"addr",rpt.addr);
+    cJSON_AddNumberToObject(entry,"opt",rpt.opt);
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",1);
-        Json_insert_int(entry,"result",rpt.res);
+        cJSON_AddNumberToObject(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
-        Json_insert_int(entry,"result",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -300,35 +312,37 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbInit
     ST_MDB_INIT_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text= NULL;
+    cJSON *root,*entry;
 
 
     req.fd =    fd;
     req.bill =  bill;
     req.coin =  coin;
     res = EV_mdbInit(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry );
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_INIT);
 
-    entry = Json_create_title(EV_MDB_INIT);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"bill",rpt.bill);
-    Json_insert_int(entry,"coin",rpt.coin);
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"bill",rpt.bill);
+    cJSON_AddNumberToObject(entry,"coin",rpt.coin);
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",rpt.res);
-        Json_insert_int(entry,"bill_result",rpt.billResult);
-        Json_insert_int(entry,"coin_result",rpt.coinResult);
+        cJSON_AddNumberToObject(entry,"is_success",rpt.res);
+        cJSON_AddNumberToObject(entry,"bill_result",rpt.billResult);
+        cJSON_AddNumberToObject(entry,"coin_result",rpt.coinResult);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -353,8 +367,8 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbEnable
     ST_MDB_ENABLE_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
 
     req.fd =    fd;
@@ -362,29 +376,32 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbEnable
     req.coin =  coin;
     req.opt =   opt;
     res = EV_mdbEnable(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_ENABLE);
 
-    entry = Json_create_title(EV_MDB_ENABLE);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"bill",rpt.bill);
-    Json_insert_int(entry,"coin",rpt.coin);
-    Json_insert_int(entry,"opt",rpt.opt);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"bill",rpt.bill);
+    cJSON_AddNumberToObject(entry,"coin",rpt.coin);
+    cJSON_AddNumberToObject(entry,"opt",rpt.opt);
 
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",rpt.res);
-        Json_insert_int(entry,"bill_result",rpt.billResult);
-        Json_insert_int(entry,"coin_result",rpt.coinResult);
+        cJSON_AddNumberToObject(entry,"is_success",rpt.res);
+        cJSON_AddNumberToObject(entry,"bill_result",rpt.billResult);
+        cJSON_AddNumberToObject(entry,"coin_result",rpt.coinResult);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -408,41 +425,43 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbHeart
     ST_MDB_HEART_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
 
     req.fd =    fd;
     res = EV_mdbHeartCheck(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_HEART);
 
-    entry = Json_create_title(EV_MDB_HEART);
-    Json_insert_int(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",rpt.res);
-        Json_insert_int(entry,"bill_enable",rpt.billEnable);
-        Json_insert_int(entry,"bill_payback",rpt.billPayback);
-        Json_insert_int(entry,"bill_err",rpt.billErr);
-        Json_insert_int(entry,"bill_recv",rpt.billAmount);
-        Json_insert_int(entry,"bill_remain",rpt.billRemain);
+        cJSON_AddNumberToObject(entry,"is_success",rpt.res);
+        cJSON_AddNumberToObject(entry,"bill_enable",rpt.billEnable);
+        cJSON_AddNumberToObject(entry,"bill_payback",rpt.billPayback);
+        cJSON_AddNumberToObject(entry,"bill_err",rpt.billErr);
+        cJSON_AddNumberToObject(entry,"bill_recv",rpt.billAmount);
+        cJSON_AddNumberToObject(entry,"bill_remain",rpt.billRemain);
 
-        Json_insert_int(entry,"coin_enable",rpt.coinEnable);
-        Json_insert_int(entry,"coin_payback",rpt.coinPayback);
-        Json_insert_int(entry,"coin_err",rpt.coinErr);
-        Json_insert_int(entry,"coin_recv",rpt.coinAmount);
-        Json_insert_int(entry,"coin_remain",rpt.coinRemain);
+        cJSON_AddNumberToObject(entry,"coin_enable",rpt.coinEnable);
+        cJSON_AddNumberToObject(entry,"coin_payback",rpt.coinPayback);
+        cJSON_AddNumberToObject(entry,"coin_err",rpt.coinErr);
+        cJSON_AddNumberToObject(entry,"coin_recv",rpt.coinAmount);
+        cJSON_AddNumberToObject(entry,"coin_remain",rpt.coinRemain);
 
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -465,67 +484,63 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbBillInfoC
     ST_MDB_BILL_INFO_RPT rpt;
     int res,i;
     jstring msg;
-    char *text,buf[256];
-    json_t *root,*entry,*arr,*label;
+    char *text = NULL,buf[256];
+    cJSON *root,*entry,*arr,*channel;
 
 
     req.fd =    fd;
     res = EV_mdbBillInfoCheck(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();;
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_B_INFO);
 
-    entry = Json_create_title(EV_MDB_B_INFO);
-    Json_insert_int(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",rpt.res);
-        Json_insert_int(entry,"acceptor",rpt.acceptor);
-        Json_insert_int(entry,"dispenser",rpt.dispenser);
+        cJSON_AddNumberToObject(entry,"is_success",rpt.res);
+        cJSON_AddNumberToObject(entry,"acceptor",rpt.acceptor);
+        cJSON_AddNumberToObject(entry,"dispenser",rpt.dispenser);
 
 
-        Json_insert_str(entry,"code",rpt.code);
-        Json_insert_str(entry,"sn",rpt.sn);
-        Json_insert_str(entry,"model",rpt.model);
+        cJSON_AddStringToObject(entry,"code",rpt.code);
+        cJSON_AddStringToObject(entry,"sn",rpt.sn);
+        cJSON_AddStringToObject(entry,"model",rpt.model);
 
         memset(buf,0,sizeof(buf));
         for(i = 0;i < 2;i++){
            sprintf(&buf[i*2],"%02x",rpt.ver[i]);
         }
-        Json_insert_str(entry,"ver",buf);
-        Json_insert_int(entry,"capacity",rpt.capacity);
+        cJSON_AddStringToObject(entry,"ver",buf);
+        cJSON_AddNumberToObject(entry,"capacity",rpt.capacity);
 
-        arr = json_new_array();
+        cJSON_AddItemToObject(entry,"ch_r",arr = cJSON_CreateArray());
+
         for(i = 0;i < 16;i++){
-            label = json_new_object();
-            Json_insert_int(label,"ch",i + 1);
-            Json_insert_int(label,"value",rpt.ch_r[i]);
-            json_insert_child(arr,label);
-        }
-        label = json_new_string("ch_r");
-        json_insert_child(label,arr);
-        json_insert_child(entry,label);
+            cJSON_AddItemToArray(arr,channel = cJSON_CreateObject());
+            cJSON_AddNumberToObject(channel,"ch",i + 1);
+            cJSON_AddNumberToObject(channel,"value",rpt.ch_r[i]);
+        }   
+        cJSON_AddItemToObject(entry,"ch_d",arr = cJSON_CreateArray());
 
-
-        arr = json_new_array();
         for(i = 0;i < 16;i++){
-            label = json_new_object();
-            Json_insert_int(label,"ch",i + 1);
-            Json_insert_int(label,"value",rpt.ch_d[i]);
-            json_insert_child(arr,label);
+            cJSON_AddItemToArray(arr,channel = cJSON_CreateObject());
+            cJSON_AddNumberToObject(channel,"ch",i + 1);
+            cJSON_AddNumberToObject(channel,"value",rpt.ch_d[i]);
+
         }
-        label = json_new_string("ch_d");
-        json_insert_child(label,arr);
-        json_insert_child(entry,label);
 
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -547,67 +562,66 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCoinInfoC
     ST_MDB_COIN_INFO_RPT rpt;
     int res,i;
     jstring msg;
-    char *text,buf[256];
-    json_t *root,*entry,*arr,*label;
+    char *text = NULL,buf[256];
+    cJSON *root,*entry,*arr,*channel;
 
 
     req.fd =    fd;
     res = EV_mdbCoinInfoCheck(&req,&rpt);
 
-    entry = Json_create_title(EV_MDB_C_INFO);
-    Json_insert_int(entry,"port_id",rpt.fd);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry );
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_C_INFO);
+
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
 
     if(res == 1){
-        Json_insert_int(entry,"is_success",rpt.res);
-        Json_insert_int(entry,"acceptor",rpt.acceptor);
-        Json_insert_int(entry,"dispenser",rpt.dispenser);
+        cJSON_AddNumberToObject(entry,"is_success",rpt.res);
+        cJSON_AddNumberToObject(entry,"acceptor",rpt.acceptor);
+        cJSON_AddNumberToObject(entry,"dispenser",rpt.dispenser);
 
 
-        Json_insert_str(entry,"code",rpt.code);
-        Json_insert_str(entry,"sn",rpt.sn);
-        Json_insert_str(entry,"model",rpt.model);
+        cJSON_AddStringToObject(entry,"code",rpt.code);
+        cJSON_AddStringToObject(entry,"sn",rpt.sn);
+        cJSON_AddStringToObject(entry,"model",rpt.model);
 
         memset(buf,0,sizeof(buf));
         for(i = 0;i < 2;i++){
            sprintf(&buf[i*2],"%02x",rpt.ver[i]);
         }
-        Json_insert_str(entry,"ver",buf);
-        Json_insert_int(entry,"capacity",rpt.capacity);
+        cJSON_AddStringToObject(entry,"ver",buf);
+        cJSON_AddNumberToObject(entry,"capacity",rpt.capacity);
 
-        arr = json_new_array();
+
+
+        cJSON_AddItemToObject(entry,"ch_r",arr = cJSON_CreateArray());
+
         for(i = 0;i < 16;i++){
-            label = json_new_object();
-            Json_insert_int(label,"ch",i + 1);
-            Json_insert_int(label,"value",rpt.ch_r[i]);
-            json_insert_child(arr,label);
+            cJSON_AddItemToArray(arr,channel = cJSON_CreateObject());
+            cJSON_AddNumberToObject(channel,"ch",i + 1);
+            cJSON_AddNumberToObject(channel,"value",rpt.ch_r[i]);
         }
-        label = json_new_string("ch_r");
-        json_insert_child(label,arr);
-        json_insert_child(entry,label);
+        cJSON_AddItemToObject(entry,"ch_d",arr = cJSON_CreateArray());
 
-
-        arr = json_new_array();
         for(i = 0;i < 16;i++){
-            label = json_new_object();
-            Json_insert_int(label,"ch",i + 1);
-            Json_insert_int(label,"value",rpt.ch_d[i]);
-            json_insert_child(arr,label);
+            cJSON_AddItemToArray(arr,channel = cJSON_CreateObject());
+            cJSON_AddNumberToObject(channel,"ch",i + 1);
+            cJSON_AddNumberToObject(channel,"value",rpt.ch_d[i]);
+
         }
-        label = json_new_string("ch_d");
-        json_insert_child(label,arr);
-        json_insert_child(entry,label);
 
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -630,33 +644,36 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCost
     ST_MDB_COST_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
 
     req.fd =    fd;
     req.cost = cost;
     res = EV_mdbCost(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_COST);
 
-    entry = Json_create_title(EV_MDB_COST);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"cost",rpt.cost);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"cost",rpt.cost);
     if(res == 1){
-        Json_insert_int(entry,"is_success",1);
-        Json_insert_int(entry,"result",rpt.res);
-        Json_insert_int(entry,"bill_recv",rpt.billAmount);
-        Json_insert_int(entry,"coin_recv",rpt.coinAmount);
+        cJSON_AddNumberToObject(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
+        cJSON_AddNumberToObject(entry,"bill_recv",rpt.billAmount);
+        cJSON_AddNumberToObject(entry,"coin_recv",rpt.coinAmount);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -679,35 +696,37 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayback
     ST_MDB_PAYBACK_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
 
     req.fd =    fd;
     req.bill = bill;
     req.coin = coin;
     res = EV_mdbPayBack(&req,&rpt);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_PAYBACK);
 
-    entry = Json_create_title(EV_MDB_PAYBACK);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"bill",rpt.bill);
-    Json_insert_int(entry,"coin",rpt.coin);
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"bill",rpt.bill);
+    cJSON_AddNumberToObject(entry,"coin",rpt.coin);
     if(res == 1){
-        Json_insert_int(entry,"is_success",1);
-        Json_insert_int(entry,"result",rpt.res);
-        Json_insert_int(entry,"bill_changed",rpt.billChanged);
-        Json_insert_int(entry,"coin_changed",rpt.coinChanged);
+        cJSON_AddNumberToObject(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
+        cJSON_AddNumberToObject(entry,"bill_changed",rpt.billChanged);
+        cJSON_AddNumberToObject(entry,"coin_changed",rpt.coinChanged);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -729,8 +748,8 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayout
     ST_MDB_PAYOUT_RPT rpt;
     int res;
     jstring msg;
-    char *text;
-    json_t *root,*entry;
+    char *text = NULL;
+    cJSON *root,*entry;
 
 
     req.fd =    fd;
@@ -740,28 +759,32 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayout
     req.coinPayout = coinPay;
     res = EV_mdbPayout(&req,&rpt);
 
-    entry = Json_create_title(EV_MDB_PAYOUT);
-    Json_insert_int(entry,"port_id",rpt.fd);
-    Json_insert_int(entry,"bill",rpt.bill);
-    Json_insert_int(entry,"coin",rpt.coin);
-    Json_insert_int(entry,"billPayout",rpt.billPayout);
-    Json_insert_int(entry,"coinPayout",rpt.coinPayout);
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_PAYOUT);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"bill",rpt.bill);
+    cJSON_AddNumberToObject(entry,"coin",rpt.coin);
+    cJSON_AddNumberToObject(entry,"billPayout",rpt.billPayout);
+    cJSON_AddNumberToObject(entry,"coinPayout",rpt.coinPayout);
     if(res == 1){
-        Json_insert_int(entry,"is_success",1);
-        Json_insert_int(entry,"result",rpt.res);
-        Json_insert_int(entry,"bill_changed",rpt.billChanged);
-        Json_insert_int(entry,"coin_changed",rpt.coinChanged);
+        cJSON_AddNumberToObject(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
+        cJSON_AddNumberToObject(entry,"bill_changed",rpt.billChanged);
+        cJSON_AddNumberToObject(entry,"coin_changed",rpt.coinChanged);
     }
     else{
-        Json_insert_int(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"is_success",0);
     }
 
-    root = Json_insert_head(entry);
-    if(root != NULL){
-        json_tree_to_string(root, &text);
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
-        json_free_value(&root);
+
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
