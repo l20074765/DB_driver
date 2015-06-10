@@ -37,8 +37,9 @@
 #define EV_MDB_COST         26      //MDB设备扣款
 #define EV_MDB_PAYBACK      27      //MDB设备退币
 #define EV_MDB_PAYOUT       28      //MDB设备找币
-
-
+#define EV_MDB_B_CON        29      //MDB纸币器配置
+#define EV_MDB_C_CON        30      //MDB硬币器配置
+#define EV_MDB_HP_PAYOUT    31      //hopper硬币器找币
 #define EV_CMD_FAIL         9998
 #define EV_JSON_ERR         9999
 
@@ -426,7 +427,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbHeart
     int res;
     jstring msg;
     char *text = NULL;
-    cJSON *root,*entry;
+    cJSON *root,*entry,*hopper;
 
 
     req.fd =    fd;
@@ -448,7 +449,22 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbHeart
 
         cJSON_AddNumberToObject(entry,"coin_enable",rpt.coinEnable);
         cJSON_AddNumberToObject(entry,"coin_payback",rpt.coinPayback);
+
+
         cJSON_AddNumberToObject(entry,"coin_err",rpt.coinErr);
+        if(rpt.isHopper == 1){
+            hopper = cJSON_CreateObject();
+            cJSON_AddItemToObject(entry,"hopper",hopper);
+            cJSON_AddNumberToObject(hopper,"hopper1",rpt.hopper[0]);
+            cJSON_AddNumberToObject(hopper,"hopper2",rpt.hopper[1]);
+            cJSON_AddNumberToObject(hopper,"hopper3",rpt.hopper[2]);
+            cJSON_AddNumberToObject(hopper,"hopper4",rpt.hopper[3]);
+            cJSON_AddNumberToObject(hopper,"hopper5",rpt.hopper[4]);
+            cJSON_AddNumberToObject(hopper,"hopper6",rpt.hopper[5]);
+            cJSON_AddNumberToObject(hopper,"hopper7",rpt.hopper[6]);
+            cJSON_AddNumberToObject(hopper,"hopper8",rpt.hopper[7]);
+        }
+
         cJSON_AddNumberToObject(entry,"coin_recv",rpt.coinAmount);
         cJSON_AddNumberToObject(entry,"coin_remain",rpt.coinRemain);
 
@@ -667,6 +683,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCost
     }
     else{
         cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
     }
 
     text = cJSON_Print(root);
@@ -720,6 +737,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayback
     }
     else{
         cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
     }
 
     text = cJSON_Print(root);
@@ -727,6 +745,61 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayback
     if(text != NULL){
         msg = (*env)->NewStringUTF(env,text);
         free(text);
+    }
+    else{
+        msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
+    }
+
+    return msg;
+
+}
+
+
+/*
+ * Class:     com_easivend_evprotocol_EVprotocol
+ * Method:    EVmdbHopperPayout
+ * Signature: (III)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbHopperPayout
+  (JNIEnv *env, jclass cls, jint fd, jint no, jint nums)
+{
+    ST_MDB_HP_PAYOUT_REQ req;
+    ST_MDB_HP_PAYOUT_RPT rpt;
+    int res;
+    jstring msg;
+    char *text = NULL;
+    cJSON *root,*entry;
+
+    req.fd =    fd;
+    req.no = no;
+    req.nums = nums;
+
+    res = EV_mdbHpPayout(&req,&rpt);
+
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_HP_PAYOUT);
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"no",rpt.no);
+    cJSON_AddNumberToObject(entry,"nums",rpt.nums);
+
+    if(res == 1){
+        cJSON_AddNumberToObject(entry,"is_success",1);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
+        cJSON_AddNumberToObject(entry,"changed",rpt.changed);
+    }
+    else{
+        cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
+    }
+
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
+        msg = (*env)->NewStringUTF(env,text);
+        free(text);
+
     }
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
@@ -777,6 +850,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayout
     }
     else{
         cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
     }
 
     text = cJSON_Print(root);
@@ -793,3 +867,256 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbPayout
     return msg;
 }
 
+
+
+/*
+ * Class:     com_easivend_evprotocol_EVprotocol
+ * Method:    EVmdbBillConfig
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbBillConfig
+  (JNIEnv *env , jclass cls, jstring reqStr)
+{
+    ST_MDB_BILL_CON_REQ req;
+    ST_MDB_BILL_CON_RPT rpt;
+
+    int res,i;
+    jstring msg;
+    char *text = NULL,*str;
+    cJSON *root,*entry,*t1,*t2,*t3,*t4;
+    char *err = "{\"EV_json\":{\"EV_type\":9998}}";
+
+    str = (char *)(*env)->GetStringUTFChars(env,reqStr, NULL);
+    root=cJSON_Parse((const char *)str);
+    (*env)->ReleaseStringUTFChars(env,reqStr,str);
+
+
+    if (!root) {
+        return  (*env)->NewStringUTF(env,err);
+    }
+
+    t1 = cJSON_GetObjectItem(root,"EV_json");
+    if(t1 == NULL){
+        return  (*env)->NewStringUTF(env,err);
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"EV_type");
+    if(t2 == NULL || t2->type != cJSON_Number || t2->valueint != EV_MDB_B_CON){
+        return  (*env)->NewStringUTF(env,err);
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"port_id");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.fd = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"acceptor");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.acceptor = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"dispenser");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.dispenser = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"ch_r");
+    if(t2 != NULL && t2->type == cJSON_Array){
+        for(i = 0;i < 16;i++){
+            t3 = cJSON_GetArrayItem(t2,1);
+            if(t3 != NULL && t3->type == cJSON_Object){
+                t4 = cJSON_GetObjectItem(t3,"value");
+                if(t4 != NULL && t4->type == cJSON_Number){
+                        req.ch_r[i] = t4->valueint;
+                }
+            }
+        }
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"ch_d");
+    if(t2 != NULL && t2->type == cJSON_Array){
+        for(i = 0;i < 16;i++){
+            t3 = cJSON_GetArrayItem(t2,1);
+            if(t3 != NULL && t3->type == cJSON_Object){
+                t4 = cJSON_GetObjectItem(t3,"value");
+                if(t4 != NULL && t4->type == cJSON_Number){
+                        req.ch_d[i] = t4->valueint;
+                }
+            }
+        }
+    }
+
+    cJSON_Delete(root); //释放root
+
+    res = EV_mdbBillConfig(&req,&rpt);
+
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_B_CON);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"acceptor",rpt.acceptor);
+    cJSON_AddNumberToObject(entry,"dispenser",rpt.dispenser);
+    if(res == 1){
+        cJSON_AddNumberToObject(entry,"is_success",rpt.com_ok);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
+    }
+    else{
+        cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
+    }
+
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
+        msg = (*env)->NewStringUTF(env,text);
+        free(text);
+
+    }
+    else{
+        msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
+    }
+    return msg;
+
+}
+
+
+
+/*
+ * Class:     com_easivend_evprotocol_EVprotocol
+ * Method:    EVmdbCoinConfig
+ * Signature: (Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCoinConfig
+  (JNIEnv *env, jclass cls, jstring reqStr)
+{
+    ST_MDB_COIN_CON_REQ req;
+    ST_MDB_COIN_CON_RPT rpt;
+
+    int res,i;
+    jstring msg;
+    char *text = NULL,*str;
+    cJSON *root,*entry,*t1,*t2,*t3,*t4;
+    char *err = "{\"EV_json\":{\"EV_type\":9998}}";
+
+    str = (char *)(*env)->GetStringUTFChars(env,reqStr, NULL);
+    root=cJSON_Parse((const char *)str);
+    (*env)->ReleaseStringUTFChars(env,reqStr,str);
+
+
+    if (!root) {
+        return  (*env)->NewStringUTF(env,err);
+    }
+
+    t1 = cJSON_GetObjectItem(root,"EV_json");
+    if(t1 == NULL){
+        return  (*env)->NewStringUTF(env,err);
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"EV_type");
+    if(t2 == NULL || t2->type != cJSON_Number || t2->valueint != EV_MDB_C_CON){
+        return  (*env)->NewStringUTF(env,err);
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"port_id");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.fd = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"acceptor");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.acceptor = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"dispenser");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.dispenser = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"hight_en");
+    if(t2 == NULL || t2->type != cJSON_Number){
+        return  (*env)->NewStringUTF(env,err);
+    }
+    else{
+        req.high_enable = t2->valueint;
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"ch_r");
+    if(t2 != NULL && t2->type == cJSON_Array){
+        for(i = 0;i < 16;i++){
+            t3 = cJSON_GetArrayItem(t2,1);
+            if(t3 != NULL && t3->type == cJSON_Object){
+                t4 = cJSON_GetObjectItem(t3,"value");
+                if(t4 != NULL && t4->type == cJSON_Number){
+                        req.ch_r[i] = t4->valueint;
+                }
+            }
+        }
+    }
+
+    t2 = cJSON_GetObjectItem(t1,"ch_d");
+    if(t2 != NULL && t2->type == cJSON_Array){
+        for(i = 0;i < 16;i++){
+            t3 = cJSON_GetArrayItem(t2,1);
+            if(t3 != NULL && t3->type == cJSON_Object){
+                t4 = cJSON_GetObjectItem(t3,"value");
+                if(t4 != NULL && t4->type == cJSON_Number){
+                        req.ch_d[i] = t4->valueint;
+                }
+            }
+        }
+    }
+
+    cJSON_Delete(root); //释放root
+
+    res = EV_mdbCoinConfig(&req,&rpt);
+
+    root=cJSON_CreateObject();
+    entry = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, JSON_HEAD, entry);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_B_CON);
+
+    cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
+    cJSON_AddNumberToObject(entry,"acceptor",rpt.acceptor);
+    cJSON_AddNumberToObject(entry,"dispenser",rpt.dispenser);
+    cJSON_AddNumberToObject(entry,"hight_en",rpt.high_enable);
+    if(res == 1){
+        cJSON_AddNumberToObject(entry,"is_success",rpt.com_ok);
+        cJSON_AddNumberToObject(entry,"result",rpt.res);
+    }
+    else{
+        cJSON_AddNumberToObject(entry,"is_success",0);
+        cJSON_AddNumberToObject(entry,"result",0);
+    }
+
+    text = cJSON_Print(root);
+    cJSON_Delete(root);
+    if(text != NULL){
+        msg = (*env)->NewStringUTF(env,text);
+        free(text);
+
+    }
+    else{
+        msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
+    }
+    return msg;
+}

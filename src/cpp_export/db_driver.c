@@ -190,6 +190,23 @@ int32  EV_API  EV_mdbPayout(ST_MDB_PAYOUT_REQ *req,ST_MDB_PAYOUT_RPT *rpt)
 
 
 
+/*********************************************************************************************************
+** Function name	:		EV_mdbHpPayout
+** Descriptions		:		hopper设备找币接口
+** input parameters	:       req 请求包结构体指针 rpt 回应包结构体指针
+** output parameters:		无
+** Returned value	:		0通信失败  1通信成功
+*********************************************************************************************************/
+int32  EV_API  EV_mdbHpPayout(ST_MDB_HP_PAYOUT_REQ *req,ST_MDB_HP_PAYOUT_RPT *rpt)
+{
+    int32 res;
+    EV_LOGD("EV_mdbHpPayout:req=%x\n",(unsigned int)req);
+    res = MDB_hpPayout(req,rpt);
+    EV_LOGD("EV_mdbHpPayout:res=%d",res);
+    return res;
+}
+
+
 
 
 /*********************************************************************************************************

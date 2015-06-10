@@ -438,6 +438,56 @@ int32 MDB_payout(const ST_MDB_PAYOUT_REQ *req,ST_MDB_PAYOUT_RPT *rpt)
 
 }
 
+/*********************************************************************************************************
+** Function name:     	MDB_hpPayout
+** Descriptions:	    hopper模组出币操作
+** input parameters:
+** output parameters:   无
+** Returned value:      0失败  1成功
+*********************************************************************************************************/
+int32 MDB_hpPayout(const ST_MDB_HP_PAYOUT_REQ *req,ST_MDB_HP_PAYOUT_RPT *rpt)
+{
+    uint8 in = MT + 1,res;
+    uint8 *buf;
+
+
+    if(req == NULL || rpt == NULL){
+        EV_LOGE("MDB_hpPayout:req=%x,rpt=%x",(unsigned int)req,(unsigned int)rpt);
+        return 0;
+    }
+
+    memset(rpt,0,sizeof(ST_MDB_HP_PAYOUT_RPT));
+    rpt->fd = req->fd;
+    rpt->no = req->no;
+    rpt->nums = req->nums;
+
+    send_msg.port = rpt->fd;
+    send_msg.type = DB_MT_ACTION_REQ;
+    send_msg.data[in++] = MDB_HP_PAYOUT_REQ;
+    send_msg.data[in++] = req->no;
+    send_msg.data[in++] = req->nums;
+    send_msg.len = in;
+    MDB_package(&send_msg);
+    res = MDB_sendMsg(&send_msg,&recv_msg,600000);
+
+    if(res != 1){
+        EV_LOGE("MDB_hpPayout:Timeout...");
+        return 0;
+    }
+
+
+    buf = recv_msg.data;
+    if(buf[MT] != DB_MT_ACTION_RPT || buf[MT + 1] != MDB_HP_PAYOUT_RPT){
+        EV_LOGE("MDB_hpPayout:buf[MT]=%x,buf[MT+1]=%x",buf[MT],buf[MT + 1]);
+        return 0;
+    }
+
+    rpt->changed = INTEG16(buf[MT + 3],buf[MT + 4]);
+    rpt->res = 1;
+    return 1;
+
+}
+
 
 
 /*********************************************************************************************************
@@ -699,7 +749,7 @@ int32 MDB_coin_config(const ST_MDB_COIN_CON_REQ *req,ST_MDB_COIN_CON_RPT *rpt)
 int32 MDB_heart_check(ST_MDB_HEART_REQ *req,ST_MDB_HEART_RPT *rpt)
 {
     uint8 in = MT + 1,res,out = MT + 2;
-    uint8 temp;
+    uint8 temp,i;
     uint16 temp16;
     uint32 temp32;
     uint8 *buf;
@@ -751,7 +801,48 @@ int32 MDB_heart_check(ST_MDB_HEART_REQ *req,ST_MDB_HEART_RPT *rpt)
 
     temp16 = INTEG16(buf[out + 0],buf[out + 1]);
     out += 2;
-    rpt->billErr = (int32)temp16;
+
+    //解析 故障码
+    if(temp16 & BILL_ERR_COM){
+        rpt->billErr = 1;
+    }
+    else if(temp16 & BILL_ERR_SENSOR){
+         rpt->billErr = 2;
+    }
+    else if(temp16 & BILL_ERR_TUBEJAM){
+         rpt->billErr = 3;
+    }
+    else if(temp16 & BILL_ERR_ROM){
+         rpt->billErr = 4;
+    }
+    else if(temp16 & BILL_ERR_ROUTING){
+         rpt->billErr = 5;
+    }
+    else if(temp16 & BILL_ERR_JAM){
+         rpt->billErr = 6;
+    }
+    else if(temp16 & BILL_ERR_REMOVECASH){
+         rpt->billErr = 7;
+    }
+    else if(temp16 & BILL_ERR_DISABLE){
+         rpt->billErr = 8;
+    }
+    else if(temp16 & BILL_ERR_MOTO){
+         rpt->billErr = 9;
+    }
+    else if(temp16 & BILL_ERR_CASH){
+         rpt->billErr = 10;
+    }
+    else if(temp16 & BILL_ERR_UNKNOW){
+         rpt->billErr = 99;
+    }
+    else{
+         rpt->billErr = 0;
+    }
+
+
+
+
     temp32 = INTEG32(buf[out],buf[out + 1],buf[out + 2],buf[out + 3]);
     out += 4;
     rpt->billAmount = (int32)temp32;
@@ -779,7 +870,49 @@ int32 MDB_heart_check(ST_MDB_HEART_REQ *req,ST_MDB_HEART_RPT *rpt)
 
     temp16 = INTEG16(buf[out + 0],buf[out + 1]);
     out += 2;
-    rpt->coinErr = (int32)temp16;
+
+    if(temp & COIN_BIT_HOPPER){
+        rpt->coinErr = 0;
+        for(i = 0;i < 8;i++){
+            rpt->hopper[i] = (temp16 >> (i * 2)) & 0x03;
+        }
+        rpt->isHopper = 1;
+    }
+    else{
+        rpt->isHopper = 0;
+        if(temp16 & COIN_ERR_COM){
+            rpt->coinErr = 1;
+        }
+        else if(temp16 & COIN_ERR_SENSOR){
+            rpt->coinErr = 2;
+        }
+        else if(temp16 & COIN_ERR_TUBEJAM){
+            rpt->coinErr = 3;
+        }
+        else if(temp16 & COIN_ERR_ROM){
+            rpt->coinErr = 4;
+        }
+        else if(temp16 & COIN_ERR_ROUTING){
+            rpt->coinErr = 5;
+        }
+        else if(temp16 & COIN_ERR_JAM){
+            rpt->coinErr = 6;
+        }
+        else if(temp16 & COIN_ERR_REMOVETUBE){
+            rpt->coinErr = 7;
+        }
+        else if(temp16 & COIN_ERR_UNKNOW){
+            rpt->coinErr = 99;
+        }
+        else{
+            rpt->coinErr = 0;
+        }
+    }
+
+
+
+
+
     temp32 = INTEG32(buf[out],buf[out + 1],buf[out + 2],buf[out + 3]);
     out += 4;
     rpt->coinAmount = (int32)temp32;

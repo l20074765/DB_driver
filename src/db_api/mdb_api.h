@@ -75,6 +75,8 @@
 #define 	MDB_COIN_CON_RPT		0x06
 #define 	MDB_BILL_CON_REQ 		0x07
 #define 	MDB_BILL_CON_RPT		0x07
+#define 	MDB_HP_PAYOUT_REQ 		0x08
+#define 	MDB_HP_PAYOUT_RPT		0x08
 
 #define     MDB_ADDR            0x31
 
@@ -103,6 +105,7 @@
 #define COIN_BIT_QUEBI						(0x01UL << 2)
 #define COIN_BIT_BUSY						(0x01UL << 3)
 #define COIN_BIT_RESET						(0x01UL << 4)
+#define COIN_BIT_HOPPER						(0x01UL << 5)
 #define COIN_BIT_OK							(0x01UL << 6)
 #define COIN_BIT_PAYBACK					(0x01UL << 7)
 
@@ -154,5 +157,5 @@ int32 MDB_payback(const ST_MDB_PAYBACK_REQ *req,ST_MDB_PAYBACK_RPT *rpt);
 int32 MDB_payout(const ST_MDB_PAYOUT_REQ *req,ST_MDB_PAYOUT_RPT *rpt);
 int32 MDB_bill_config(const ST_MDB_BILL_CON_REQ *req,ST_MDB_BILL_CON_RPT *rpt);
 int32 MDB_coin_config(const ST_MDB_COIN_CON_REQ *req,ST_MDB_COIN_CON_RPT *rpt);
-
+int32 MDB_hpPayout(const ST_MDB_HP_PAYOUT_REQ *req,ST_MDB_HP_PAYOUT_RPT *rpt);
 #endif
