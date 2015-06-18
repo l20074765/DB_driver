@@ -66,7 +66,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVPortRegister
     portName = (char *)(*env)->GetStringUTFChars(env,jportName, NULL);
     fd = EV_portRegister((char *)portName);
     (*env)->ReleaseStringUTFChars(env,jportName,portName);
-    portName = yserial_getPortName(fd);
+
     root=cJSON_CreateObject();
     entry = cJSON_CreateObject();
     cJSON_AddItemToObject(root, JSON_HEAD,entry);
@@ -1093,7 +1093,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCoinConfi
     root=cJSON_CreateObject();
     entry = cJSON_CreateObject();
     cJSON_AddItemToObject(root, JSON_HEAD, entry);
-    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_B_CON);
+    cJSON_AddNumberToObject(entry,JSON_TYPE,EV_MDB_C_CON);
 
     cJSON_AddNumberToObject(entry,"port_id",rpt.fd);
     cJSON_AddNumberToObject(entry,"acceptor",rpt.acceptor);
