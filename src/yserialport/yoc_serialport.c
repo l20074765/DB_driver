@@ -35,6 +35,10 @@ char *yserial_getPortName(int32 fd)
     return port->portName;
 }
 
+
+
+
+
 ST_PORT *yserialCreate(char *portName){
     ST_PORT *port = NULL;
     int i,len;

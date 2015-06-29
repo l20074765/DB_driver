@@ -65,7 +65,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVPortRegister
 
     portName = (char *)(*env)->GetStringUTFChars(env,jportName, NULL);
     fd = EV_portRegister((char *)portName);
-    (*env)->ReleaseStringUTFChars(env,jportName,portName);
+
 
     root=cJSON_CreateObject();
     entry = cJSON_CreateObject();
@@ -84,6 +84,10 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVPortRegister
     else{
         msg = (*env)->NewStringUTF(env,"{\"EV_json\":{\"EV_type\":9999}}");
     }
+
+    //释放java串口堆
+    (*env)->ReleaseStringUTFChars(env,jportName,portName);
+
 
     return msg;
 }

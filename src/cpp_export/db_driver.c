@@ -41,6 +41,9 @@ int32   EV_API  EV_portRegister(int8 *portName)
 
 
 
+
+
+
 void   EV_API  EV_portRelease(int32 fd)
 {
     yserial_close(fd);
