@@ -8,7 +8,7 @@
 #include<stdlib.h>
 #include<unistd.h>
 #include<string.h>
-
+#include "ev_config.h"
 
 /*********************************************************************************************************
 **定义请求包类型
@@ -936,7 +936,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbBillConfi
     t2 = cJSON_GetObjectItem(t1,"ch_r");
     if(t2 != NULL && t2->type == cJSON_Array){
         for(i = 0;i < 16;i++){
-            t3 = cJSON_GetArrayItem(t2,1);
+            t3 = cJSON_GetArrayItem(t2,i);
             if(t3 != NULL && t3->type == cJSON_Object){
                 t4 = cJSON_GetObjectItem(t3,"value");
                 if(t4 != NULL && t4->type == cJSON_Number){
@@ -949,7 +949,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbBillConfi
     t2 = cJSON_GetObjectItem(t1,"ch_d");
     if(t2 != NULL && t2->type == cJSON_Array){
         for(i = 0;i < 16;i++){
-            t3 = cJSON_GetArrayItem(t2,1);
+            t3 = cJSON_GetArrayItem(t2,i);
             if(t3 != NULL && t3->type == cJSON_Object){
                 t4 = cJSON_GetObjectItem(t3,"value");
                 if(t4 != NULL && t4->type == cJSON_Number){
@@ -1065,9 +1065,11 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCoinConfi
     }
 
     t2 = cJSON_GetObjectItem(t1,"ch_r");
+    EV_LOGD("CH_r:t2->type=%d\n",t2->type);
+
     if(t2 != NULL && t2->type == cJSON_Array){
         for(i = 0;i < 16;i++){
-            t3 = cJSON_GetArrayItem(t2,1);
+            t3 = cJSON_GetArrayItem(t2,i);
             if(t3 != NULL && t3->type == cJSON_Object){
                 t4 = cJSON_GetObjectItem(t3,"value");
                 if(t4 != NULL && t4->type == cJSON_Number){
@@ -1080,7 +1082,7 @@ JNIEXPORT jstring JNICALL Java_com_easivend_evprotocol_EVprotocol_EVmdbCoinConfi
     t2 = cJSON_GetObjectItem(t1,"ch_d");
     if(t2 != NULL && t2->type == cJSON_Array){
         for(i = 0;i < 16;i++){
-            t3 = cJSON_GetArrayItem(t2,1);
+            t3 = cJSON_GetArrayItem(t2,i);
             if(t3 != NULL && t3->type == cJSON_Object){
                 t4 = cJSON_GetObjectItem(t3,"value");
                 if(t4 != NULL && t4->type == cJSON_Number){

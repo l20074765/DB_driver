@@ -465,7 +465,8 @@ int32 MDB_hpPayout(const ST_MDB_HP_PAYOUT_REQ *req,ST_MDB_HP_PAYOUT_RPT *rpt)
     send_msg.type = DB_MT_ACTION_REQ;
     send_msg.data[in++] = MDB_HP_PAYOUT_REQ;
     send_msg.data[in++] = req->no;
-    send_msg.data[in++] = req->nums;
+    send_msg.data[in++] = HUINT16(req->nums);
+    send_msg.data[in++] = LUINT16(req->nums);
     send_msg.len = in;
     MDB_package(&send_msg);
     res = MDB_sendMsg(&send_msg,&recv_msg,600000);
@@ -697,9 +698,11 @@ int32 MDB_coin_config(const ST_MDB_COIN_CON_REQ *req,ST_MDB_COIN_CON_RPT *rpt)
     rpt->acceptor = req->acceptor;
     rpt->dispenser = req->dispenser;
     rpt->high_enable = req->high_enable;
+    EV_LOGD("MDB_coin_config:\n\n");
     for(i = 0;i < 16;i++){
         rpt->ch_d[i] = req->ch_d[i];
         rpt->ch_r[i] = req->ch_r[i];
+        EV_LOGD("ch_d[%d] = %d ch_r[%d] = %d\n",i,rpt->ch_d[i],i,rpt->ch_r[i]);
     }
 
     type = (uint8)(rpt->acceptor & 0x0F);

@@ -102,7 +102,6 @@ int32 yserial_open(char *portName)
         port_arr[port->id] = NULL;
         free(port->portName);
         free(port);
-
         return -1;
     }
     winserial_setRWBuffer(port->fd,1024,1024);
@@ -118,7 +117,6 @@ int32 yserial_open(char *portName)
         port_arr[port->id] = NULL;
         free(port->portName);
         free(port);
-
         return -1;
     }
     unixserial_setBaudRate(port->fd,BAUD9600);
