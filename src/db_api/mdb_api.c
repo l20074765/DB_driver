@@ -32,6 +32,7 @@ typedef struct _st_mdb_msg_{
     uint8 data_len; //数据段长度
     uint8 addr;
     uint8 type;
+    uint8 subType;
     int32 port;
 }MDB_MSG;
 
@@ -66,6 +67,55 @@ static uint8 MDB_xorCheck(uint8 *msg, uint8 len)
 }
 
 
+uint8 MDB_ackIsRight(MDB_MSG *msg)
+{
+    if(msg == NULL){return 0;}
+    if(msg->type == DB_MT_ACTION_REQ){
+        if(msg->data[MT] != DB_MT_ACTION_RPT){
+            return 0;
+        }
+
+        if(msg->data[MT + 1] == msg->subType){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+    }
+    else if(msg->type == DB_MT_CHECK_REQ){
+        if(msg->data[MT] != DB_MT_CHECK_RPT){
+            return 0;
+        }
+
+        if(msg->data[MT + 1] == msg->subType){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+
+    }
+    else if(msg->type == DB_MT_CON_REQ){
+        if(msg->data[MT] == DB_MT_CON_RPT){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+    }
+    else if(msg->type == DB_MT_ID_REQ){
+        if(msg->data[MT] == DB_MT_ID_RPT){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+    }
+    else {
+        return 0;
+    }
+
+}
 
 
 
@@ -93,7 +143,7 @@ uint8 MDB_recv(MDB_MSG *msg,uint32 timeout)
             else if(index >= msg->data[LEN]){
                 msg->data[index++] = ch;
                 crc = MDB_xorCheck(msg->data,msg->data[LEN]);
-                if(crc == ch && sn == msg->data[SN]){
+                if(crc == ch && sn == msg->data[SN] && MDB_ackIsRight(msg)){
                     msg->len = index;
                     msg->data_len = msg->data[LEN] - MT - 1;
                     MDB_LOG(0,msg->data,msg->len);
@@ -143,13 +193,15 @@ uint8 MDB_sendMsg(MDB_MSG *send_msg,MDB_MSG *recv_msg,int32 timeout)
 {
     uint16 t,i;
     uint8 res;
-    t = (timeout <= 1000)  ? 1 : timeout / 1000;
+    t = (timeout <= 2000)  ? 1 : timeout / 2000;
     recv_msg->port = send_msg->port;
+    recv_msg->type = send_msg->type;
+    recv_msg->subType = send_msg->data[MT + 1];
     for(i = 0;i < t;i++){
         EV_LOGI("MDB_Re_send:i=%d,t=%d,fd=%d",i,t,recv_msg->port);
         MDB_send(send_msg);
-        res = MDB_recv(recv_msg,1000);
-        if(res == 1){
+        res = MDB_recv(recv_msg,2000);
+        if(res == 1){ //收到一次
             return 1;
         }
     }
@@ -320,7 +372,7 @@ int32 MDB_enable(ST_MDB_ENABLE_REQ *req,ST_MDB_ENABLE_RPT *rpt)
 
     buf = recv_msg.data;
     if(buf[MT] != DB_MT_ACTION_RPT || buf[MT+1] != MDB_CONTROL_RPT){
-        EV_LOGE("MDB_init:buf[MT]=%x,buf[MT+1]=%x",buf[MT],buf[MT + 1]);
+        EV_LOGE("MDB_enable:buf[MT]=%x,buf[MT+1]=%x",buf[MT],buf[MT + 1]);
         return 0;
     }
 
